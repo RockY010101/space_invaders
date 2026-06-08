@@ -81,7 +81,7 @@ class PlayState:
         )
         self.hud = HUD(self.score_manager)
 
-        self.wave_clear_timer = 0
+        self._wave_clear_pending = False  # True while waiting for SPACE after wave
         self.is_paused = False
 
         self.font_large  = pygame.font.SysFont("Courier", 38, bold=True)
@@ -156,11 +156,11 @@ class PlayState:
             self._handle_pause_input()
             return
 
-        # Wave-clear pause
-        if self.wave_clear_timer > 0:
-            self.wave_clear_timer -= delta_time
+        # Wave-clear: hold game, let player press SPACE to begin next wave
+        if self._wave_clear_pending:
             self.particle_system.update(delta_time)
-            if self.wave_clear_timer <= 0:
+            if self.input_manager.is_just_pressed(pygame.K_SPACE):
+                self._wave_clear_pending = False
                 self.score_manager.level += 1
                 self.bullet_manager.bullets.clear()
                 self.enemy_grid.reset(self.score_manager.level)
@@ -178,7 +178,7 @@ class PlayState:
             return
 
         if self.enemy_grid.alive_count == 0:
-            self.wave_clear_timer = 2.0
+            self._wave_clear_pending = True
 
     # ------------------------------------------------------------------ #
     #  Drawing helpers                                                     #
@@ -360,6 +360,54 @@ class PlayState:
     #  Main draw                                                           #
     # ------------------------------------------------------------------ #
 
+    def _draw_wave_clear_screen(self, surface):
+        """Full-screen wave-clear overlay shown between waves."""
+        cx = settings.SCREEN_WIDTH  // 2
+        cy = settings.SCREEN_HEIGHT // 2
+
+        # --- Dim overlay ---
+        overlay = pygame.Surface(
+            (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 160))
+        surface.blit(overlay, (0, 0))
+
+        # --- Panel ---
+        panel_w, panel_h = 360, 200
+        panel_rect = pygame.Rect(cx - panel_w // 2, cy - panel_h // 2,
+                                 panel_w, panel_h)
+        panel_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
+        panel_surf.fill((15, 15, 45, 220))
+        surface.blit(panel_surf, panel_rect.topleft)
+        pygame.draw.rect(surface, settings.COLORS["CYAN"],
+                         panel_rect, 2, border_radius=10)
+
+        # --- "WAVE X CLEARED!" ---
+        wave_num   = self.score_manager.level   # still the just-completed level
+        title_text = f"WAVE  {wave_num}  CLEARED!"
+        title_surf = self.font_large.render(title_text, True,
+                                            settings.COLORS["YELLOW"])
+        surface.blit(title_surf,
+                     (cx - title_surf.get_width() // 2, cy - 55))
+
+        # --- Divider ---
+        pygame.draw.line(surface, (40, 40, 100),
+                         (panel_rect.left  + 20, cy - 10),
+                         (panel_rect.right - 20, cy - 10), 1)
+
+        # --- "Press SPACE for Wave N+1" ---
+        next_text  = f"Press SPACE for Wave {wave_num + 1}"
+        next_surf  = self.font_normal.render(next_text, True,
+                                             settings.COLORS["WHITE"])
+        surface.blit(next_surf,
+                     (cx - next_surf.get_width() // 2, cy + 10))
+
+        # --- Blinking hint (flashes every ~0.6 s using ticks) ---
+        if (pygame.time.get_ticks() // 600) % 2 == 0:
+            hint_surf = self.font_small.render("[ SPACEBAR ]", True,
+                                               settings.COLORS["CYAN"])
+            surface.blit(hint_surf,
+                         (cx - hint_surf.get_width() // 2, cy + 52))
+
     def draw(self, surface):
         surface.fill(settings.COLORS["BACKGROUND"])
         self.player.draw(surface)
@@ -371,10 +419,5 @@ class PlayState:
 
         if self.is_paused:
             self._draw_pause_menu(surface)
-        elif self.wave_clear_timer > 0:
-            text_surf = self.font_large.render("WAVE CLEAR!", True,
-                                               settings.COLORS["CYAN"])
-            surface.blit(text_surf, (
-                settings.SCREEN_WIDTH  // 2 - text_surf.get_width()  // 2,
-                settings.SCREEN_HEIGHT // 2,
-            ))
+        elif self._wave_clear_pending:
+            self._draw_wave_clear_screen(surface)
