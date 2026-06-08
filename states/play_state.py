@@ -372,7 +372,7 @@ class PlayState:
         surface.blit(overlay, (0, 0))
 
         # --- Panel ---
-        panel_w, panel_h = 360, 200
+        panel_w, panel_h = 400, 200
         panel_rect = pygame.Rect(cx - panel_w // 2, cy - panel_h // 2,
                                  panel_w, panel_h)
         panel_surf = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
@@ -383,23 +383,24 @@ class PlayState:
 
         # --- "WAVE X CLEARED!" ---
         wave_num   = self.score_manager.level   # still the just-completed level
-        title_text = f"WAVE  {wave_num}  CLEARED!"
-        title_surf = self.font_large.render(title_text, True,
-                                            settings.COLORS["YELLOW"])
+        font_title = pygame.font.SysFont("Courier", 30, bold=True)
+        title_text = f"WAVE {wave_num} CLEARED!"
+        title_surf = font_title.render(title_text, True,
+                                       settings.COLORS["YELLOW"])
         surface.blit(title_surf,
-                     (cx - title_surf.get_width() // 2, cy - 55))
+                     (cx - title_surf.get_width() // 2, cy - 60))
 
         # --- Divider ---
         pygame.draw.line(surface, (40, 40, 100),
-                         (panel_rect.left  + 20, cy - 10),
-                         (panel_rect.right - 20, cy - 10), 1)
+                         (panel_rect.left  + 20, cy - 15),
+                         (panel_rect.right - 20, cy - 15), 1)
 
         # --- "Press SPACE for Wave N+1" ---
-        next_text  = f"Press SPACE for Wave {wave_num + 1}"
-        next_surf  = self.font_normal.render(next_text, True,
-                                             settings.COLORS["WHITE"])
+        next_text = f"Press SPACE for Wave {wave_num + 1}"
+        next_surf = self.font_normal.render(next_text, True,
+                                            settings.COLORS["WHITE"])
         surface.blit(next_surf,
-                     (cx - next_surf.get_width() // 2, cy + 10))
+                     (cx - next_surf.get_width() // 2, cy + 5))
 
         # --- Blinking hint (flashes every ~0.6 s using ticks) ---
         if (pygame.time.get_ticks() // 600) % 2 == 0:
@@ -407,6 +408,7 @@ class PlayState:
                                                settings.COLORS["CYAN"])
             surface.blit(hint_surf,
                          (cx - hint_surf.get_width() // 2, cy + 52))
+
 
     def draw(self, surface):
         surface.fill(settings.COLORS["BACKGROUND"])
