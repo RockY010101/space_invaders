@@ -64,7 +64,7 @@ class Player:
             if bullet_manager.spawn_player_bullet(spawn_x, spawn_y):
                 self.cooldown_timer = self.cooldown_duration
                 if sound_manager:
-                    sound_manager.play("shoot")
+                    sound_manager.play_shoot()
 
     def draw(self, surface):
         if self.is_alive:
