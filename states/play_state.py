@@ -62,6 +62,11 @@ class PlayState:
         self.score_manager  = ScoreManager()
         self.particle_system = ParticleSystem()
         self.sound_manager  = SoundManager()
+        # Stop any menu background music that may still be fading out
+        try:
+            pygame.mixer.music.stop()
+        except Exception:
+            pass
         self.player         = Player()
         self.enemy_grid     = EnemyGrid()
         self.ufo            = UFO()
